@@ -1,0 +1,12 @@
+# Test execution output
+results/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# App binaries under test (fetch/build separately, don't commit)
+apps/*.apk
+apps/*.ipa
+apps/*.app
