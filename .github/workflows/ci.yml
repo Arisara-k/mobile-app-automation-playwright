@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install -r requirements.txt
 
       - name: Check formatting (Robotidy)
@@ -47,6 +47,7 @@ jobs:
     # the standard GitHub-hosted macOS runner tier, so Linux + KVM is the reliable path here.
     runs-on: ubuntu-latest
     steps:
+      # --- Environment setup ---
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -65,12 +66,23 @@ jobs:
           npm install -g appium
           appium driver install uiautomator2
 
+      # Grants the runner user access to /dev/kvm - required for the emulator to use
+      # hardware acceleration instead of (much slower) software emulation.
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # --- App & test run ---
       - name: Download app apk from the latest GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p apps
           gh release download --repo "${{ github.repository }}" --pattern '*.apk' --dir apps --clobber
+          # configs/ApplicationConfigs.robot hardcodes this exact filename; only rename if the
+          # release asset was uploaded under a different name.
           downloaded=$(ls apps/*.apk | head -n1)
           target="apps/Android-MyDemoAppRN.1.0.0.build-130.apk"
           if [ "$downloaded" != "$target" ]; then
@@ -84,12 +96,6 @@ jobs:
             curl -sf http://127.0.0.1:4723/status && break
             sleep 2
           done
-
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
 
       - name: Run regression-tagged tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
