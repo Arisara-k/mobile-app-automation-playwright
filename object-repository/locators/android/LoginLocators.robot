@@ -1,9 +1,4 @@
 *** Variables ***
-# Section: Navigation (Drawer Menu & Post-Login Destination)
-${OPEN_MENU_BUTTON}                         accessibility_id=open menu
-${MENU_LOG_IN_ITEM}                         accessibility_id=menu item log in
-${PRODUCTS_SCREEN_CONTAINER}                accessibility_id=products screen
-
 # Section: Screen Container
 ${LOGIN_SCREEN_CONTAINER}                   accessibility_id=login screen
 

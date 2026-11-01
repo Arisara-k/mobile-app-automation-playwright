@@ -10,8 +10,7 @@ Resource            ../../constants/LoginConstants.robot
 # Navigation (used by [Test Setup] to return to a known state between tests)
 Open Login Screen
     [Documentation]    Opens the drawer menu and navigates to the Login screen.
-    Wait Until Element Is Visible    ${OPEN_MENU_BUTTON}    ${MEDIUM_RETRY_SCALE}
-    Click Element    ${OPEN_MENU_BUTTON}
+    Open Drawer Menu
     Wait Until Element Is Visible    ${MENU_LOG_IN_ITEM}    ${SMALL_RETRY_SCALE}
     Click Element    ${MENU_LOG_IN_ITEM}
     Wait Until Element Is Visible    ${LOGIN_SCREEN_CONTAINER}    ${MEDIUM_RETRY_SCALE}
@@ -21,6 +20,16 @@ Relaunch To Login Screen
     ...    of where a previous test left off (e.g. after a prior test logged in successfully).
     Relaunch Application
     Open Login Screen
+
+Log In As Standard User
+    [Documentation]    Composite setup action: relaunches the app, logs in with the given credentials,
+    ...    and confirms landing on the Products screen. Useful as a [Test Setup] for suites that need
+    ...    an authenticated starting state (e.g. Logout).
+    [Arguments]    ${username}    ${password}
+    Relaunch Application
+    Open Login Screen
+    Submit Login Form    ${username}    ${password}
+    Verify Navigated To Products Screen
 
 # Actions (verify immediate effect where practical - fail-fast)
 

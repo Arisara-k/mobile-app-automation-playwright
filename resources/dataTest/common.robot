@@ -1,6 +1,7 @@
 *** Comments ***
-Test input payloads for the Login screen.
-Reference these variables from test-cases/login.robot instead of typing literal credentials.
+Reusable test inputs shared across multiple screens' test suites (e.g. Login and Logout both need
+the same standard/locked-out test user credentials). Screen-specific inputs that only one suite
+needs belong in that screen's own resources/dataTest/<screen>.robot file instead.
 
 
 *** Variables ***
