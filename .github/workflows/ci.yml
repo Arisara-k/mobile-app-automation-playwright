@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-dryrun:
+    name: Format, Lint & Dry-Run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check formatting (Robotidy)
+        run: python -m robotidy --check .
+
+      - name: Lint (Robocop)
+        run: python -m robocop check .
+
+      - name: Dry-run suites (Android)
+        run: python -m robot --dryrun -v PLATFORM_NAME:android -d results/android test-cases
+
+      - name: Dry-run suites (iOS)
+        run: python -m robot --dryrun -v PLATFORM_NAME:ios -d results/ios test-cases
+
+      - name: Upload dry-run results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dryrun-results
+          path: results/
+
+  regression-android:
+    name: Regression Run (Android Emulator)
+    needs: lint-and-dryrun
+    # Linux runners get KVM-accelerated emulator support out of the box. macOS runners were tried
+    # first but failed with "HVF error: HV_UNSUPPORTED" - nested virtualization isn't available on
+    # the standard GitHub-hosted macOS runner tier, so Linux + KVM is the reliable path here.
+    runs-on: ubuntu-latest
+    steps:
+      # --- Environment setup ---
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Appium + uiautomator2 driver
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+
+      # Grants the runner user access to /dev/kvm - required for the emulator to use
+      # hardware acceleration instead of (much slower) software emulation.
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # --- App & test run ---
+      - name: Download app apk from the latest GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p apps
+          gh release download --repo "${{ github.repository }}" --pattern '*.apk' --dir apps --clobber
+          # configs/ApplicationConfigs.robot hardcodes this exact filename; only rename if the
+          # release asset was uploaded under a different name.
+          downloaded=$(ls apps/*.apk | head -n1)
+          target="apps/Android-MyDemoAppRN.1.0.0.build-130.apk"
+          if [ "$downloaded" != "$target" ]; then
+            mv "$downloaded" "$target"
+          fi
+
+      - name: Start Appium server
+        run: |
+          appium server --log-level info > appium.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:4723/status && break
+            sleep 2
+          done
+
+      - name: Run regression-tagged tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          script: python -m robot -v PLATFORM_NAME:android -i regression -d results/android-device test-cases
+
+      - name: Upload regression results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-android-results
+          path: results/android-device/

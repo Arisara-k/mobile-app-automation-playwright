@@ -1,0 +1,5 @@
+# Robocop config. MISC06 (suggests ".resource" extensions) and DOC03 (suggests "*** Settings ***"
+# Documentation on pure-variable files) conflict with this project's deliberate convention of using
+# ".robot" everywhere and "*** Comments ***" for locator/constants/fixtures files - not real defects.
+[tool.robocop.lint]
+ignore = ["MISC06", "DOC03"]

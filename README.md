@@ -72,3 +72,13 @@ Dry-run (syntax/import check only, no device needed):
 ```bash
 python -m robot --dryrun -v PLATFORM_NAME:android -d results test-cases
 ```
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push to `main` and every PR targeting it:
+
+1. **`lint-and-dryrun`** (always runs, no device needed): `robotidy --check`, `robocop check`, and a dry-run of every suite for both `android` and `ios`.
+2. **`regression-android`** (runs after lint passes): boots a real Android emulator (`reactivecircus/android-emulator-runner`) and runs only the tests tagged `regression` (`-i regression`) for real.
+   - The app `.apk` is downloaded from this repo's **latest GitHub Release** (`gh release download --pattern '*.apk'`) using the default `GITHUB_TOKEN` - no extra secret needed.
+   - **To keep this job working, attach the Android `.apk` as an asset on every GitHub Release you cut** (any filename ending in `.apk` - the workflow renames it to match `configs/ApplicationConfigs.robot`).
+   - There is no iOS equivalent in CI, since the `xcuitest` driver requires a macOS host with Xcode/Simulator - run the iOS suite locally or on a macOS-based CI runner with Xcode installed.
