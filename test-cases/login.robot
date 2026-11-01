@@ -9,7 +9,7 @@ Documentation       Verify component and functionality on the Login screen.
 
 Resource            ../object-repository/page-objects/CommonPo.robot
 Resource            ../object-repository/page-objects/LoginPo.robot
-Resource            ../resources/dataTest/login.robot
+Resource            ../resources/dataTest/common.robot
 
 Suite Setup         Open App Session
 Suite Teardown      Close App Session

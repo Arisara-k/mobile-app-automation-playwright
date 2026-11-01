@@ -6,6 +6,7 @@ Documentation       Shared keywords reused across every screen's Page Object: ap
 Library             AppiumLibrary
 Resource            ../../configs/AppiumConfigs.robot
 Resource            ../../configs/ApplicationConfigs.robot
+Resource            ../locators/${PLATFORM_NAME}/DrawerLocators.robot
 
 
 *** Keywords ***
@@ -32,6 +33,12 @@ Relaunch Application
     ...    back into certain screens on the next attempt - closing and reopening the session avoids that.
     Close Application
     Open App Session
+
+Open Drawer Menu
+    [Documentation]    Opens the app's drawer/hamburger menu. Shared by every screen's Page Object
+    ...    that navigates via a drawer menu item (e.g. Login, Logout).
+    Wait Until Element Is Visible    ${OPEN_MENU_BUTTON}    ${MEDIUM_RETRY_SCALE}
+    Click Element    ${OPEN_MENU_BUTTON}
 
 Dismiss Permission Dialog If Present
     [Documentation]    Grants or dismisses an OS permission dialog if one appears after an action,
