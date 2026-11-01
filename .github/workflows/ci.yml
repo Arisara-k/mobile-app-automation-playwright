@@ -71,7 +71,11 @@ jobs:
         run: |
           mkdir -p apps
           gh release download --repo "${{ github.repository }}" --pattern '*.apk' --dir apps --clobber
-          mv apps/*.apk "apps/Android-MyDemoAppRN.1.0.0.build-130.apk"
+          downloaded=$(ls apps/*.apk | head -n1)
+          target="apps/Android-MyDemoAppRN.1.0.0.build-130.apk"
+          if [ "$downloaded" != "$target" ]; then
+            mv "$downloaded" "$target"
+          fi
 
       - name: Start Appium server
         run: |
