@@ -42,7 +42,10 @@ jobs:
   regression-android:
     name: Regression Run (Android Emulator)
     needs: lint-and-dryrun
-    runs-on: macos-latest
+    # Linux runners get KVM-accelerated emulator support out of the box. macOS runners were tried
+    # first but failed with "HVF error: HV_UNSUPPORTED" - nested virtualization isn't available on
+    # the standard GitHub-hosted macOS runner tier, so Linux + KVM is the reliable path here.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -78,15 +81,18 @@ jobs:
             sleep 2
           done
 
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Run regression-tagged tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
           target: google_apis
-          arch: arm64-v8a
-          # The stable-channel emulator binary fails HVF init ("failed to initialize HVF: invalid
-          # argument") on recent Apple Silicon macOS runner images; canary has the fix.
-          channel: canary
+          arch: x86_64
           script: python -m robot -v PLATFORM_NAME:android -i regression -d results/android-device test-cases
 
       - name: Upload regression results
